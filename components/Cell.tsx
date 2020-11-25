@@ -144,6 +144,9 @@ const styles = StyleSheet.create({
     borderRightColor: "grey",
     borderWidth: 4,
     textAlign: "center",
+    padding: 0,
+    color: "white",
+    textAlignVertical: "center",
   },
   pressed: {
     borderTopColor: "grey",
@@ -152,13 +155,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   revealed: {
+    width: 35,
+    maxWidth: 35,
+    height: 35,
+    maxHeight: 35,
     backgroundColor: "#3fd5f0",
     borderTopColor: "grey",
     borderLeftColor: "grey",
     padding: 4,
     borderWidth: 1,
-    color: "white",
-    textAlignVertical: "center",
   },
   exploded: {
     backgroundColor: "#ff0000",
