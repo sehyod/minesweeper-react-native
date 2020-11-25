@@ -48,7 +48,8 @@ const Cell = (props: CellProps) => {
           <Pressable
             onPressIn={() => setCellPressed(true)}
             onPressOut={() => setCellPressed(false)}
-            onPress={() => console.log("test")}
+            onPress={handleClick(false)}
+            onLongPress={handleClick(true)}
           >
             <View
               style={
