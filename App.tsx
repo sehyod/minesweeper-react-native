@@ -1,22 +1,19 @@
-import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import Cell from "./components/Cell";
-import { CellState } from "./types";
+import { Platform, StyleSheet, StatusBar, View } from "react-native";
+import Board from "./components/Board";
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Cell
-        value={3}
-        state={CellState.HIDDEN}
-        gameOver={false}
-        onLeftClick={() => null}
-        onRightClick={() => null}
-      />
+      <View style={styles.statusBar}>
+        <StatusBar translucent barStyle="light-content" />
+      </View>
+      <Board />
     </View>
   );
 }
+
+const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 20 : StatusBar.currentHeight;
 
 const styles = StyleSheet.create({
   container: {
@@ -24,5 +21,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  statusBar: {
+    height: STATUSBAR_HEIGHT,
   },
 });
