@@ -1,16 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import {
+  Modal,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import {
   createEmptyBoard,
   generateValues,
-  revealEmptyNeighborhood,
+  getEmptyNeighborhood,
 } from "../utils/minesweeper";
+import Popup from "./Popup";
+import Timer from "./Timer";
 
 const Board: React.FC = () => {
-  const [rows] = useState(10);
-  const [columns] = useState(10);
+  const [rows] = useState(9);
+  const [columns] = useState(9);
   const [mines] = useState(10);
   const [board, setBoard] = useState<CellType[][]>([]);
   const [valuesGenerated, setValuesGenerated] = useState(false);
@@ -18,10 +26,10 @@ const Board: React.FC = () => {
   const [won, setWon] = useState(false);
   const [revealedCells, setRevealedCells] = useState(0);
   const [flaggedCells, setFlaggedCells] = useState(0);
-  const [seconds, setSeconds] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
   const windowsDimensions = useWindowDimensions();
+
   // Start a new game at the first render
   useEffect(() => {
     resetGame();
@@ -39,28 +47,14 @@ const Board: React.FC = () => {
     if (won || exploded) setTimerActive(false);
   }, [won, exploded]);
 
-  // Start the timer
-  useEffect(() => {
-    if (timerActive) {
-      const timer = setInterval(
-        () => setSeconds((seconds) => seconds + 1),
-        1000
-      );
-
-      return () => {
-        clearInterval(timer);
-      };
-    }
-  }, [timerActive]);
-
   const resetGame = () => {
-    setBoard(createEmptyBoard(rows, columns));
     setValuesGenerated(false);
     setExploded(false);
-    setRevealedCells(0);
     setWon(false);
-    setSeconds(0);
     setTimerActive(false);
+    setRevealedCells(0);
+    setFlaggedCells(0);
+    setBoard(createEmptyBoard(rows, columns));
   };
 
   // Update the board to reveal a cell
@@ -70,6 +64,16 @@ const Board: React.FC = () => {
     setRevealedCells((revealedCells) => revealedCells + 1);
     setBoard(([...board]) => {
       board[row][column].state = CellState.REVEALED;
+      return board;
+    });
+  };
+
+  const revealCells = (cells: Coordinates[]) => {
+    setRevealedCells((revealedCells) => revealedCells + cells.length);
+    setBoard(([...board]) => {
+      for (const [row, column] of cells) {
+        board[row][column].state = CellState.REVEALED;
+      }
       return board;
     });
   };
@@ -96,10 +100,10 @@ const Board: React.FC = () => {
       return;
     }
 
-    revealCell([row, column]);
-
     if (cellData.value === 0) {
-      revealEmptyNeighborhood([row, column], currentBoard, revealCell);
+      revealCells(getEmptyNeighborhood([row, column], currentBoard));
+    } else {
+      revealCell([row, column]);
     }
   };
 
@@ -123,7 +127,7 @@ const Board: React.FC = () => {
     <View style={[styles.container, { width: windowsDimensions.width }]}>
       <View style={styles.header}>
         <View style={{ alignItems: "flex-start" }}>
-          <Text style={styles.headerText}>{seconds}</Text>
+          <Timer start={timerActive} style={styles.headerText} />
         </View>
         <View style={{ alignItems: "center" }}>
           <Text style={styles.headerText}>Minesweeper</Text>

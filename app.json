@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/mine.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/mine.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/mine.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.minesweeper"

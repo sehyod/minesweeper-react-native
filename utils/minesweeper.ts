@@ -111,21 +111,20 @@ export const generateValues = (
 };
 
 /**
- * Reveal the neighborhood when clicking on an empty cell with a BFS
+ * Get the neighborhood to reveal when clicking on an empty cell with a BFS
  * @param cell The cell which has been revealed
  * @param board The board, to know whether a cell is empty or not
- * @param revealCell The function to reveal a single cell
  *
  * @return the neighborhood to reveal
  */
-export const revealEmptyNeighborhood = (
+export const getEmptyNeighborhood = (
   cell: Coordinates,
-  board: CellType[][],
-  revealCell: (cell: Coordinates) => void
-): void => {
+  board: CellType[][]
+): Coordinates[] => {
   const rows = board.length;
   const columns = board[0].length;
   const visited: { [index: number]: boolean } = {};
+  const neighborhood = [cell];
   const queue: Coordinates[] = [];
   visited[cell[0] * columns + cell[1]] = true;
   queue.push(cell);
@@ -139,10 +138,11 @@ export const revealEmptyNeighborhood = (
       )
       .forEach(([neighborRow, neighborColumn]) => {
         visited[neighborRow * columns + neighborColumn] = true;
-        revealCell([neighborRow, neighborColumn]);
+        neighborhood.push([neighborRow, neighborColumn]);
         if (board[neighborRow][neighborColumn].value === 0) {
           queue.push([neighborRow, neighborColumn]);
         }
       });
   }
+  return neighborhood;
 };
