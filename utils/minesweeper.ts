@@ -111,34 +111,38 @@ export const generateValues = (
 };
 
 /**
- * Get the neighborhood to reveal when clicking on an empty cell with a BFS
+ * Reveal the neighborhood when clicking on an empty cell with a BFS
  * @param cell The cell which has been revealed
  * @param board The board, to know whether a cell is empty or not
+ * @param revealCell The function to reveal a single cell
  *
  * @return the neighborhood to reveal
  */
-export const getEmptyNeighborhood = (
+export const revealEmptyNeighborhood = (
   cell: Coordinates,
-  board: CellType[][]
-): Coordinates[] => {
+  board: CellType[][],
+  revealCell: (cell: Coordinates) => void
+): void => {
   const rows = board.length;
   const columns = board[0].length;
-  const visited: number[] = [];
+  const visited: { [index: number]: boolean } = {};
   const queue: Coordinates[] = [];
-  visited.push(cell[0] * columns + cell[1]);
+  visited[cell[0] * columns + cell[1]] = true;
   queue.push(cell);
   while (queue.length > 0) {
     const [row, column] = queue.splice(0, 1)[0];
     getNeighbors(row, column, rows, columns)
       .filter(
-        (neighbor) => !visited.includes(neighbor[0] * columns + neighbor[1])
+        ([neighborRow, neighborColumn]) =>
+          !visited[neighborRow * columns + neighborColumn] &&
+          board[neighborRow][neighborColumn].state !== CellState.REVEALED
       )
-      .forEach((neighbor) => {
-        visited.push(neighbor[0] * columns + neighbor[1]);
-        if (board[neighbor[0]][neighbor[1]].value === 0) {
-          queue.push(neighbor);
+      .forEach(([neighborRow, neighborColumn]) => {
+        visited[neighborRow * columns + neighborColumn] = true;
+        revealCell([neighborRow, neighborColumn]);
+        if (board[neighborRow][neighborColumn].value === 0) {
+          queue.push([neighborRow, neighborColumn]);
         }
       });
   }
-  return visited.map((index) => transformCoordinates(index, columns));
 };
