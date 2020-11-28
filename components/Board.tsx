@@ -2,6 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import {
+  createEmptyBoard,
+  generateValues,
+  revealEmptyNeighborhood,
+} from "../utils/minesweeper";
 
 const Board: React.FC = () => {
   const [rows] = useState(10);
@@ -17,52 +22,22 @@ const Board: React.FC = () => {
   const [timerActive, setTimerActive] = useState(false);
 
   const windowsDimensions = useWindowDimensions();
-
   // Start a new game at the first render
   useEffect(() => {
-    startGame();
+    resetGame();
   }, []);
-
-  // Compute the sum of cells that are revealed when the board is updated
-  useEffect(() => {
-    setRevealedCells(
-      board
-        .map(
-          (row) =>
-            row.filter((cell) => cell.state === CellState.REVEALED).length
-        )
-        .reduce((a, b) => a + b, 0)
-    );
-  }, [board]);
 
   // Check whether all safe cells have been revealed
   useEffect(() => {
     if (revealedCells === rows * columns - mines) {
       setWon(true);
     }
-  }, [revealedCells]);
+  });
 
   // Stop the timer when the game is over
   useEffect(() => {
     if (won || exploded) setTimerActive(false);
   }, [won, exploded]);
-
-  // Set remaining mine cells as flagged once the game is finished
-  // (if the player has found all safe cells, then the remaining cells are mine cells)
-  useEffect(() => {
-    if (won) {
-      setBoard(([...board]) => {
-        return board.map((row) =>
-          row.map((cell) => {
-            if (cell.value === "mine") {
-              cell.state = CellState.FLAGGED;
-            }
-            return cell;
-          })
-        );
-      });
-    }
-  }, [won]);
 
   // Start the timer
   useEffect(() => {
@@ -78,8 +53,8 @@ const Board: React.FC = () => {
     }
   }, [timerActive]);
 
-  const startGame = () => {
-    setBoard([]); // TODO: create the initial board
+  const resetGame = () => {
+    setBoard(createEmptyBoard(rows, columns));
     setValuesGenerated(false);
     setExploded(false);
     setRevealedCells(0);
@@ -92,6 +67,7 @@ const Board: React.FC = () => {
   const revealCell = (cell: Coordinates) => {
     const [row, column] = cell;
     // Update the board
+    setRevealedCells((revealedCells) => revealedCells + 1);
     setBoard(([...board]) => {
       board[row][column].state = CellState.REVEALED;
       return board;
@@ -102,7 +78,8 @@ const Board: React.FC = () => {
     // Populate the board and start the timer if it is the first click
     let currentBoard = board;
     if (!valuesGenerated) {
-      //TODO: generate mines and values
+      currentBoard = generateValues(board, mines, [row, column]);
+      setBoard(currentBoard);
       setTimerActive(true);
       setValuesGenerated(true);
     }
@@ -122,7 +99,7 @@ const Board: React.FC = () => {
     revealCell([row, column]);
 
     if (cellData.value === 0) {
-      //TODO: reveal the neighborhood of the cell
+      revealEmptyNeighborhood([row, column], currentBoard, revealCell);
     }
   };
 
@@ -141,8 +118,6 @@ const Board: React.FC = () => {
       return board;
     });
   };
-
-  const isGameOver = () => won || exploded;
 
   return (
     <View style={[styles.container, { width: windowsDimensions.width }]}>
@@ -166,7 +141,8 @@ const Board: React.FC = () => {
                 key={`${rowIndex}-${columnIndex}`}
                 value={cell.value}
                 state={cell.state}
-                gameOver={isGameOver()}
+                won={won}
+                exploded={exploded}
                 onLeftClick={handleLeftClick(rowIndex, columnIndex)}
                 onRightClick={handleRightClick(rowIndex, columnIndex)}
               />
@@ -186,6 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   header: {
+    marginTop: 10,
     flexDirection: "row",
     flex: 1,
     justifyContent: "space-around",

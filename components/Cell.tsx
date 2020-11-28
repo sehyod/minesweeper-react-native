@@ -6,16 +6,20 @@ import { CellState } from "../types";
 interface CellProps {
   value: "mine" | number;
   state: CellState;
-  gameOver: boolean;
+  won: boolean;
+  exploded: boolean;
   onLeftClick: () => void;
   onRightClick: () => void;
 }
 
 const Cell = (props: CellProps) => {
   const [cellPressed, setCellPressed] = React.useState(false);
+
+  const gameOver = props.won || props.exploded;
+
   const handleClick = (longClick: boolean) => () => {
     // No action possible if the game is over
-    if (props.gameOver) return;
+    if (gameOver) return;
 
     if (longClick) {
       // Flag click
@@ -27,7 +31,7 @@ const Cell = (props: CellProps) => {
     }
   };
 
-  if (!props.gameOver) {
+  if (!gameOver) {
     // Normal render
     switch (props.state) {
       case CellState.FLAGGED:
@@ -102,8 +106,17 @@ const Cell = (props: CellProps) => {
       case CellState.HIDDEN:
       default:
         if (props.value === "mine") {
+          if (props.won)
+            return (
+              <View style={styles.cell}>
+                <Image
+                  style={styles.icon}
+                  source={require("../assets/flag.png")}
+                />
+              </View>
+            );
           return (
-            <View style={[styles.cell, styles.revealed, styles.exploded]}>
+            <View style={[styles.cell, styles.revealed]}>
               <Image
                 style={styles.icon}
                 source={require("../assets/mine.png")}
