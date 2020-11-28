@@ -13,6 +13,7 @@ interface CellProps {
 }
 
 const Cell = (props: CellProps) => {
+  console.log(props);
   const [cellPressed, setCellPressed] = React.useState(false);
 
   const gameOver = props.won || props.exploded;

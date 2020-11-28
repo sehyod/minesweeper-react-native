@@ -8,11 +8,18 @@ import { range, shuffle } from "./array";
  *
  * @return [row, column] the coordinates of the cell in the board
  */
-export const transformCoordinates = (
+export const getCoordinatesFromIndex = (
   index: number,
   columns: number
 ): Coordinates => {
   return [Math.floor(index / columns), index % columns];
+};
+
+export const getIndexFromCoordinates = (
+  [row, column]: Coordinates,
+  columns: number
+): number => {
+  return row * columns + column;
 };
 
 /**
@@ -25,17 +32,17 @@ export const transformCoordinates = (
  * @return the list of coordinates of the neighbors
  */
 export const getNeighbors = (
-  row: number,
-  column: number,
+  index: number,
   rows: number,
   columns: number
-): Coordinates[] => {
-  const neighborhood: Coordinates[] = [];
+): number[] => {
+  const [row, column] = getCoordinatesFromIndex(index, columns);
+  const neighborhood: number[] = [];
   for (let i = row - 1; i < row + 2; i++) {
     if (0 <= i && i < rows) {
       for (let j = column - 1; j < column + 2; j++) {
         if ((i !== row || j !== column) && 0 <= j && j < columns)
-          neighborhood.push([i, j]);
+          neighborhood.push(getIndexFromCoordinates([i, j], columns));
       }
     }
   }
@@ -47,19 +54,14 @@ export const getNeighbors = (
  * @param rows number of rows of the board
  * @param columns number of columns of the board
  */
-export const createEmptyBoard = (
-  rows: number,
-  columns: number
-): CellType[][] => {
-  const cells: CellType[][] = [];
+export const createEmptyBoard = (rows: number, columns: number): CellType[] => {
+  const board: CellType[] = [];
   for (let row = 0; row < rows; row++) {
-    const currentRow: CellType[] = [];
     for (let column = 0; column < columns; column++) {
-      currentRow.push({ state: CellState.HIDDEN, value: 0 });
+      board.push({ state: CellState.HIDDEN, value: 0 });
     }
-    cells.push(currentRow);
   }
-  return cells;
+  return board;
 };
 
 /**
@@ -69,40 +71,34 @@ export const createEmptyBoard = (
  * @param clickedCell the first cell clicked on to avoid hitting a mine on the first try
  */
 export const generateValues = (
-  board: CellType[][],
+  board: CellType[],
   numberOfMines: number,
-  clickedCell: Coordinates
-): CellType[][] => {
-  const rows = board.length;
-  const columns = board[0].length;
-  const forbiddenCells = getNeighbors(
-    clickedCell[0],
-    clickedCell[1],
+  clickedCellIndex: number,
+  rows: number,
+  columns: number
+): CellType[] => {
+  // Remove the initial cell and its neighbors from the mine position candidates
+  const forbiddenCellsIndexes = getNeighbors(
+    clickedCellIndex,
     rows,
     columns
-  ).concat([clickedCell]);
-  const forbiddenIndexes = forbiddenCells.map(
-    ([row, column]) => row * columns + column
-  );
+  ).concat([clickedCellIndex]);
   const availableIndexes = range(rows * columns).filter(
-    (index) => !forbiddenIndexes.includes(index)
+    (index) => !forbiddenCellsIndexes.includes(index)
   );
 
-  // Remove the initial box from the mine position candidates
-  //availableIndexes.filter((index) => !forbiddenIndexes.includes(index));
-
+  // Select the mines indexes
   const minesIndexes = shuffle(availableIndexes).slice(0, numberOfMines);
 
   for (const mineIndex of minesIndexes) {
     // Add bomb
-    const [row, column] = transformCoordinates(mineIndex, columns);
-    board[row][column].value = "mine";
+    board[mineIndex].value = "mine";
 
     // Update value of adjacent cells
-    for (const [i, j] of getNeighbors(row, column, rows, columns)) {
-      const cellValue = board[i][j].value;
+    for (const neighbor of getNeighbors(mineIndex, rows, columns)) {
+      const cellValue = board[neighbor].value;
       if (cellValue !== "mine") {
-        board[i][j].value = cellValue + 1;
+        board[neighbor].value = cellValue + 1;
       }
     }
   }
@@ -118,29 +114,28 @@ export const generateValues = (
  * @return the neighborhood to reveal
  */
 export const getEmptyNeighborhood = (
-  cell: Coordinates,
-  board: CellType[][]
-): Coordinates[] => {
-  const rows = board.length;
-  const columns = board[0].length;
+  cellIndex: number,
+  board: CellType[],
+  rows: number,
+  columns: number
+): number[] => {
   const visited: { [index: number]: boolean } = {};
-  const neighborhood = [cell];
-  const queue: Coordinates[] = [];
-  visited[cell[0] * columns + cell[1]] = true;
-  queue.push(cell);
+  const neighborhood = [cellIndex];
+  const queue: number[] = [];
+  visited[cellIndex] = true;
+  queue.push(cellIndex);
   while (queue.length > 0) {
-    const [row, column] = queue.splice(0, 1)[0];
-    getNeighbors(row, column, rows, columns)
+    const index = queue.splice(0, 1)[0];
+    getNeighbors(index, rows, columns)
       .filter(
-        ([neighborRow, neighborColumn]) =>
-          !visited[neighborRow * columns + neighborColumn] &&
-          board[neighborRow][neighborColumn].state !== CellState.REVEALED
+        (neighbor) =>
+          !visited[neighbor] && board[neighbor].state !== CellState.REVEALED
       )
-      .forEach(([neighborRow, neighborColumn]) => {
-        visited[neighborRow * columns + neighborColumn] = true;
-        neighborhood.push([neighborRow, neighborColumn]);
-        if (board[neighborRow][neighborColumn].value === 0) {
-          queue.push([neighborRow, neighborColumn]);
+      .forEach((neighbor) => {
+        visited[neighbor] = true;
+        neighborhood.push(neighbor);
+        if (board[neighbor].value === 0) {
+          queue.push(neighbor);
         }
       });
   }

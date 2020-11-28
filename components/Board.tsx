@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
 import {
+  FlatList,
   Modal,
   StyleSheet,
   Text,
@@ -20,7 +21,7 @@ const Board: React.FC = () => {
   const [rows] = useState(9);
   const [columns] = useState(9);
   const [mines] = useState(10);
-  const [board, setBoard] = useState<CellType[][]>([]);
+  const [board, setBoard] = useState<CellType[]>([]);
   const [valuesGenerated, setValuesGenerated] = useState(false);
   const [exploded, setExploded] = useState(false);
   const [won, setWon] = useState(false);
@@ -58,57 +59,56 @@ const Board: React.FC = () => {
   };
 
   // Update the board to reveal a cell
-  const revealCell = (cell: Coordinates) => {
-    const [row, column] = cell;
+  const revealCell = (index: number) => {
     // Update the board
     setRevealedCells((revealedCells) => revealedCells + 1);
     setBoard(([...board]) => {
-      board[row][column].state = CellState.REVEALED;
+      board[index].state = CellState.REVEALED;
       return board;
     });
   };
 
-  const revealCells = (cells: Coordinates[]) => {
-    setRevealedCells((revealedCells) => revealedCells + cells.length);
+  const revealCells = (indexes: number[]) => {
+    setRevealedCells((revealedCells) => revealedCells + indexes.length);
     setBoard(([...board]) => {
-      for (const [row, column] of cells) {
-        board[row][column].state = CellState.REVEALED;
+      for (const index of indexes) {
+        board[index].state = CellState.REVEALED;
       }
       return board;
     });
   };
 
-  const handleLeftClick = (row: number, column: number) => () => {
+  const handleLeftClick = (index: number) => () => {
     // Populate the board and start the timer if it is the first click
     let currentBoard = board;
     if (!valuesGenerated) {
-      currentBoard = generateValues(board, mines, [row, column]);
+      currentBoard = generateValues(board, mines, index, rows, columns);
       setBoard(currentBoard);
       setTimerActive(true);
       setValuesGenerated(true);
     }
 
-    const cellData = currentBoard[row][column];
+    const cellData = currentBoard[index];
 
     // Mine found: the game is over
     if (cellData.value === "mine") {
       setExploded(true);
       setBoard(([...board]) => {
-        board[row][column].state = CellState.EXPLODED;
+        board[index].state = CellState.EXPLODED;
         return board;
       });
       return;
     }
 
     if (cellData.value === 0) {
-      revealCells(getEmptyNeighborhood([row, column], currentBoard));
+      revealCells(getEmptyNeighborhood(index, currentBoard, rows, columns));
     } else {
-      revealCell([row, column]);
+      revealCell(index);
     }
   };
 
-  const handleRightClick = (row: number, column: number) => () => {
-    const cellHasFlag = board[row][column].state === CellState.FLAGGED;
+  const handleRightClick = (index: number) => () => {
+    const cellHasFlag = board[index].state === CellState.FLAGGED;
 
     // Update the number of flagged cells
     if (cellHasFlag) setFlaggedCells((flaggedCells) => flaggedCells - 1);
@@ -116,9 +116,7 @@ const Board: React.FC = () => {
 
     // Update the board with the new flag or the removed flag
     setBoard(([...board]) => {
-      board[row][column].state = cellHasFlag
-        ? CellState.HIDDEN
-        : CellState.FLAGGED;
+      board[index].state = cellHasFlag ? CellState.HIDDEN : CellState.FLAGGED;
       return board;
     });
   };
@@ -137,23 +135,21 @@ const Board: React.FC = () => {
         </View>
       </View>
 
-      <View style={styles.table}>
-        {board.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((cell, columnIndex) => (
-              <Cell
-                key={`${rowIndex}-${columnIndex}`}
-                value={cell.value}
-                state={cell.state}
-                won={won}
-                exploded={exploded}
-                onLeftClick={handleLeftClick(rowIndex, columnIndex)}
-                onRightClick={handleRightClick(rowIndex, columnIndex)}
-              />
-            ))}
-          </View>
-        ))}
-      </View>
+      <FlatList
+        data={board}
+        renderItem={({ item, index }) => (
+          <Cell
+            value={item.state}
+            state={item.state}
+            won={won}
+            exploded={exploded}
+            onLeftClick={handleLeftClick(index)}
+            onRightClick={handleRightClick(index)}
+          />
+        )}
+        numColumns={columns}
+        keyExtractor={(_, index) => index.toString()}
+      />
       <View />
       <Modal visible={won || exploded} transparent>
         <Popup
