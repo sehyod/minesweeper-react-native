@@ -150,7 +150,14 @@ const Board: React.FC = () => {
           </View>
         ))}
       </View>
-      <View style={styles.footer} />
+      <View />
+      <Modal visible={won || exploded} transparent>
+        <Popup
+          visible={won || exploded}
+          text={won ? "You win!" : "You lose!"}
+          onReset={resetGame}
+        />
+      </Modal>
     </View>
   );
 };
@@ -167,6 +174,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-around",
     height: 35,
+    maxHeight: 35,
   },
   headerText: {
     fontSize: 30,
@@ -179,9 +187,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    height: 35,
-  },
-  footer: {
     height: 35,
   },
 });
