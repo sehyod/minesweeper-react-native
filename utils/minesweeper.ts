@@ -129,7 +129,7 @@ export const getEmptyNeighborhood = (
     getNeighbors(index, rows, columns)
       .filter(
         (neighbor) =>
-          !visited[neighbor] && board[neighbor].state !== CellState.REVEALED
+          !visited[neighbor] && board[neighbor].state === CellState.HIDDEN
       )
       .forEach((neighbor) => {
         visited[neighbor] = true;

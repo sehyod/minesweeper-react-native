@@ -1,4 +1,3 @@
-import { ReactElement } from "react";
 import { Platform } from "react-native";
 
 export default Platform.OS !== "web"

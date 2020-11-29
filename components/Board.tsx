@@ -63,16 +63,20 @@ const Board: React.FC = () => {
 
   // Update the board to reveal a cell
   const revealCell = (index: number) => {
-    // Update the board
+    // Update the number of revealed cells
     setRevealedCells((revealedCells) => revealedCells + 1);
+
     setBoard(([...board]) => {
       board[index].state = CellState.REVEALED;
       return board;
     });
   };
 
+  // Update the board to reveal several cells
   const revealCells = (indexes: number[]) => {
+    // Update the number of revealed cells
     setRevealedCells((revealedCells) => revealedCells + indexes.length);
+
     setBoard(([...board]) => {
       for (const index of indexes) {
         board[index].state = CellState.REVEALED;
@@ -136,6 +140,8 @@ const Board: React.FC = () => {
     />
   );
 
+  // Since the layout is the same for each cell,
+  // we can "tell" the Flatlist component to avoid some useless computations
   const getItemLayout = (_: CellType[] | null | undefined, index: number) => ({
     length: 35,
     offset: 35 * index,

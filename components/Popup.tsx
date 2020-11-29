@@ -23,6 +23,7 @@ const Popup = (props: PopupProps) => {
   const easeOut = useRef(new Animated.Value(windowsHeight / 2)).current;
   const scale = useRef(new Animated.Value(1)).current;
 
+  // Start easeOut animation, followed by a pulse
   useEffect(() => {
     if (props.visible) {
       Animated.sequence([
