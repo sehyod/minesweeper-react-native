@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
@@ -7,6 +7,8 @@ import {
   generateValues,
   revealEmptyNeighborhood,
 } from "../utils/minesweeper";
+import Popup from "./Popup";
+import Modal from "./Modal";
 
 const Board: React.FC = () => {
   const [rows] = useState(10);
