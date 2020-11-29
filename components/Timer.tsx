@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Text } from "react-native";
+import { displayTime } from "../utils/time";
 
 interface TimerProps {
   start: boolean;
+  reset: boolean;
   style: { fontSize: number };
 }
 
@@ -11,7 +13,6 @@ const Timer = (props: TimerProps) => {
 
   useEffect(() => {
     if (props.start) {
-      setSeconds(0);
       const timer = setInterval(
         () => setSeconds((seconds) => seconds + 1),
         1000
@@ -20,7 +21,11 @@ const Timer = (props: TimerProps) => {
     }
   }, [props.start]);
 
-  return <Text style={props.style}>{seconds}</Text>;
+  useEffect(() => {
+    if (props.reset) setSeconds(0);
+  }, [props.reset]);
+
+  return <Text style={props.style}>{displayTime(seconds)}</Text>;
 };
 
 export default Timer;

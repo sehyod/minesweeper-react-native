@@ -28,6 +28,7 @@ const Board: React.FC = () => {
   const [revealedCells, setRevealedCells] = useState(0);
   const [flaggedCells, setFlaggedCells] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  const [timerReset, setTimerReset] = useState(true);
 
   const windowsDimensions = useWindowDimensions();
 
@@ -39,6 +40,7 @@ const Board: React.FC = () => {
   // Check whether all safe cells have been revealed
   useEffect(() => {
     if (revealedCells === rows * columns - mines) {
+      setFlaggedCells(mines);
       setWon(true);
     }
   });
@@ -52,6 +54,7 @@ const Board: React.FC = () => {
     setValuesGenerated(false);
     setExploded(false);
     setWon(false);
+    setTimerReset(true);
     setTimerActive(false);
     setRevealedCells(0);
     setFlaggedCells(0);
@@ -84,6 +87,7 @@ const Board: React.FC = () => {
     if (!valuesGenerated) {
       currentBoard = generateValues(board, mines, index, rows, columns);
       setBoard(currentBoard);
+      setTimerReset(false);
       setTimerActive(true);
       setValuesGenerated(true);
     }
@@ -141,14 +145,18 @@ const Board: React.FC = () => {
   return (
     <View style={[styles.container, { width: windowsDimensions.width }]}>
       <View style={styles.header}>
-        <View style={{ alignItems: "flex-start" }}>
-          <Timer start={timerActive} style={styles.headerText} />
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Timer
+            start={timerActive}
+            reset={timerReset}
+            style={styles.headerText}
+          />
         </View>
-        <View style={{ alignItems: "center" }}>
+        <View style={{ alignItems: "center", flex: 2 }}>
           <Text style={styles.headerText}>Minesweeper</Text>
         </View>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.headerText}>{flaggedCells}</Text>
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Text style={styles.headerText}>{mines - flaggedCells}</Text>
         </View>
       </View>
       <View style={styles.board}>
