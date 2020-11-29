@@ -121,6 +121,23 @@ const Board: React.FC = () => {
     });
   };
 
+  const renderCell = ({ item, index }: { item: CellType; index: number }) => (
+    <Cell
+      value={item.value}
+      state={item.state}
+      won={won}
+      exploded={exploded}
+      onLeftClick={handleLeftClick(index)}
+      onRightClick={handleRightClick(index)}
+    />
+  );
+
+  const getItemLayout = (_: CellType[] | null | undefined, index: number) => ({
+    length: 35,
+    offset: 35 * index,
+    index,
+  });
+
   return (
     <View style={[styles.container, { width: windowsDimensions.width }]}>
       <View style={styles.header}>
@@ -134,22 +151,16 @@ const Board: React.FC = () => {
           <Text style={styles.headerText}>{flaggedCells}</Text>
         </View>
       </View>
-
-      <FlatList
-        data={board}
-        renderItem={({ item, index }) => (
-          <Cell
-            value={item.state}
-            state={item.state}
-            won={won}
-            exploded={exploded}
-            onLeftClick={handleLeftClick(index)}
-            onRightClick={handleRightClick(index)}
-          />
-        )}
-        numColumns={columns}
-        keyExtractor={(_, index) => index.toString()}
-      />
+      <View style={styles.board}>
+        <FlatList
+          data={board}
+          renderItem={renderCell}
+          numColumns={columns}
+          keyExtractor={(_, index) => index.toString()}
+          updateCellsBatchingPeriod={10}
+          getItemLayout={getItemLayout}
+        />
+      </View>
       <View />
       <Modal visible={won || exploded} transparent>
         <Popup
@@ -179,15 +190,10 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 30,
   },
-  table: {
+  board: {
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "center",
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    height: 35,
   },
 });
 
