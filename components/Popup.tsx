@@ -29,7 +29,7 @@ const Popup = (props: PopupProps) => {
         Animated.timing(easeOut, {
           toValue: 0,
           duration: 1000,
-          easing: Easing.out(Easing.exp),
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(scale, {

@@ -1,27 +1,36 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import {
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import {
   createEmptyBoard,
   generateValues,
-  revealEmptyNeighborhood,
+  getEmptyNeighborhood,
 } from "../utils/minesweeper";
+import Popup from "./Popup";
+import Timer from "./Timer";
 
 const Board: React.FC = () => {
-  const [rows] = useState(10);
-  const [columns] = useState(10);
+  const [rows] = useState(9);
+  const [columns] = useState(9);
   const [mines] = useState(10);
-  const [board, setBoard] = useState<CellType[][]>([]);
+  const [board, setBoard] = useState<CellType[]>([]);
   const [valuesGenerated, setValuesGenerated] = useState(false);
   const [exploded, setExploded] = useState(false);
   const [won, setWon] = useState(false);
   const [revealedCells, setRevealedCells] = useState(0);
   const [flaggedCells, setFlaggedCells] = useState(0);
-  const [seconds, setSeconds] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
   const windowsDimensions = useWindowDimensions();
+
   // Start a new game at the first render
   useEffect(() => {
     resetGame();
@@ -39,72 +48,67 @@ const Board: React.FC = () => {
     if (won || exploded) setTimerActive(false);
   }, [won, exploded]);
 
-  // Start the timer
-  useEffect(() => {
-    if (timerActive) {
-      const timer = setInterval(
-        () => setSeconds((seconds) => seconds + 1),
-        1000
-      );
-
-      return () => {
-        clearInterval(timer);
-      };
-    }
-  }, [timerActive]);
-
   const resetGame = () => {
-    setBoard(createEmptyBoard(rows, columns));
     setValuesGenerated(false);
     setExploded(false);
-    setRevealedCells(0);
     setWon(false);
-    setSeconds(0);
     setTimerActive(false);
+    setRevealedCells(0);
+    setFlaggedCells(0);
+    setBoard(createEmptyBoard(rows, columns));
   };
 
   // Update the board to reveal a cell
-  const revealCell = (cell: Coordinates) => {
-    const [row, column] = cell;
+  const revealCell = (index: number) => {
     // Update the board
     setRevealedCells((revealedCells) => revealedCells + 1);
     setBoard(([...board]) => {
-      board[row][column].state = CellState.REVEALED;
+      board[index].state = CellState.REVEALED;
       return board;
     });
   };
 
-  const handleLeftClick = (row: number, column: number) => () => {
+  const revealCells = (indexes: number[]) => {
+    setRevealedCells((revealedCells) => revealedCells + indexes.length);
+    setBoard(([...board]) => {
+      for (const index of indexes) {
+        board[index].state = CellState.REVEALED;
+      }
+      return board;
+    });
+  };
+
+  const handleLeftClick = (index: number) => () => {
     // Populate the board and start the timer if it is the first click
     let currentBoard = board;
     if (!valuesGenerated) {
-      currentBoard = generateValues(board, mines, [row, column]);
+      currentBoard = generateValues(board, mines, index, rows, columns);
       setBoard(currentBoard);
       setTimerActive(true);
       setValuesGenerated(true);
     }
 
-    const cellData = currentBoard[row][column];
+    const cellData = currentBoard[index];
 
     // Mine found: the game is over
     if (cellData.value === "mine") {
       setExploded(true);
       setBoard(([...board]) => {
-        board[row][column].state = CellState.EXPLODED;
+        board[index].state = CellState.EXPLODED;
         return board;
       });
       return;
     }
 
-    revealCell([row, column]);
-
     if (cellData.value === 0) {
-      revealEmptyNeighborhood([row, column], currentBoard, revealCell);
+      revealCells(getEmptyNeighborhood(index, currentBoard, rows, columns));
+    } else {
+      revealCell(index);
     }
   };
 
-  const handleRightClick = (row: number, column: number) => () => {
-    const cellHasFlag = board[row][column].state === CellState.FLAGGED;
+  const handleRightClick = (index: number) => () => {
+    const cellHasFlag = board[index].state === CellState.FLAGGED;
 
     // Update the number of flagged cells
     if (cellHasFlag) setFlaggedCells((flaggedCells) => flaggedCells - 1);
@@ -112,18 +116,33 @@ const Board: React.FC = () => {
 
     // Update the board with the new flag or the removed flag
     setBoard(([...board]) => {
-      board[row][column].state = cellHasFlag
-        ? CellState.HIDDEN
-        : CellState.FLAGGED;
+      board[index].state = cellHasFlag ? CellState.HIDDEN : CellState.FLAGGED;
       return board;
     });
   };
+
+  const renderCell = ({ item, index }: { item: CellType; index: number }) => (
+    <Cell
+      value={item.value}
+      state={item.state}
+      won={won}
+      exploded={exploded}
+      onLeftClick={handleLeftClick(index)}
+      onRightClick={handleRightClick(index)}
+    />
+  );
+
+  const getItemLayout = (_: CellType[] | null | undefined, index: number) => ({
+    length: 35,
+    offset: 35 * index,
+    index,
+  });
 
   return (
     <View style={[styles.container, { width: windowsDimensions.width }]}>
       <View style={styles.header}>
         <View style={{ alignItems: "flex-start" }}>
-          <Text style={styles.headerText}>{seconds}</Text>
+          <Timer start={timerActive} style={styles.headerText} />
         </View>
         <View style={{ alignItems: "center" }}>
           <Text style={styles.headerText}>Minesweeper</Text>
@@ -132,23 +151,15 @@ const Board: React.FC = () => {
           <Text style={styles.headerText}>{flaggedCells}</Text>
         </View>
       </View>
-
-      <View style={styles.table}>
-        {board.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((cell, columnIndex) => (
-              <Cell
-                key={`${rowIndex}-${columnIndex}`}
-                value={cell.value}
-                state={cell.state}
-                won={won}
-                exploded={exploded}
-                onLeftClick={handleLeftClick(rowIndex, columnIndex)}
-                onRightClick={handleRightClick(rowIndex, columnIndex)}
-              />
-            ))}
-          </View>
-        ))}
+      <View style={styles.board}>
+        <FlatList
+          data={board}
+          renderItem={renderCell}
+          numColumns={columns}
+          keyExtractor={(_, index) => index.toString()}
+          updateCellsBatchingPeriod={10}
+          getItemLayout={getItemLayout}
+        />
       </View>
       <View />
       <Modal visible={won || exploded} transparent>
@@ -179,15 +190,10 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 30,
   },
-  table: {
+  board: {
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "center",
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    height: 35,
   },
 });
 
