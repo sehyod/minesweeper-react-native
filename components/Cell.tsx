@@ -57,6 +57,7 @@ const Cell = (props: CellProps) => {
         return (
           <Pressable
             onPressIn={() => setCellPressed(true)}
+            onPressOut={() => setCellPressed(false)}
             onPress={handleClick(false)}
             onLongPress={handleClick(true)}
           >
