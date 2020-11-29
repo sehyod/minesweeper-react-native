@@ -3,7 +3,6 @@ import Cell from "./Cell";
 import { CellState, CellType, Coordinates } from "../types";
 import {
   FlatList,
-  Modal,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -15,6 +14,7 @@ import {
   getEmptyNeighborhood,
 } from "../utils/minesweeper";
 import Popup from "./Popup";
+import Modal from "./Modal";
 import Timer from "./Timer";
 
 const Board: React.FC = () => {
