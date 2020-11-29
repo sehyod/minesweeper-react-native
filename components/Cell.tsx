@@ -13,12 +13,12 @@ interface CellProps {
 }
 
 const Cell = (props: CellProps) => {
-  console.log(props);
   const [cellPressed, setCellPressed] = React.useState(false);
 
   const gameOver = props.won || props.exploded;
 
   const handleClick = (longClick: boolean) => () => {
+    setCellPressed(false);
     // No action possible if the game is over
     if (gameOver) return;
 
@@ -57,7 +57,6 @@ const Cell = (props: CellProps) => {
         return (
           <Pressable
             onPressIn={() => setCellPressed(true)}
-            onPressOut={() => setCellPressed(false)}
             onPress={handleClick(false)}
             onLongPress={handleClick(true)}
           >
